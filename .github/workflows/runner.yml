@@ -148,7 +148,7 @@ jobs:
           done
 
       - name: Upload a Build Artifact
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@v4
           name: artifact
           path: /runner-artifact/*
           include-hidden-files: false
