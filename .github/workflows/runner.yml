@@ -44,6 +44,14 @@ jobs:
           sudo apt update
           EOF
 
+          sudo cat <<EOF > /usr/local/bin/upgrade
+          sudo apt upgrade
+          EOF
+
+          sudo cat <<EOF > /usr/local/bin/full-upgrade
+          sudo apt full-upgrade
+          EOF
+
           sudo cat <<EOF > /usr/local/bin/clean
           sudo apt clean
           EOF
@@ -56,15 +64,8 @@ jobs:
           sudo apt autoremove --purge
           EOF
 
-          sudo cat <<EOF > /usr/local/bin/upgrade
-          sudo apt upgrade
-          EOF
-
-          sudo cat <<EOF > /usr/local/bin/full-upgrade
-          sudo apt full-upgrade
-          EOF
-
           sudo chmod +x /usr/local/bin/*
+
 
       - name: Updating APT
         run: |
@@ -148,7 +149,8 @@ jobs:
           done
 
       - name: Upload a Build Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7.0.1
+        with:
           name: artifact
           path: /runner-artifact/*
           include-hidden-files: false
