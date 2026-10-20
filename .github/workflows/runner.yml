@@ -1,0 +1,155 @@
+name: QEMU x86_64 Runner
+
+on:
+  workflow_dispatch: 
+    inputs:
+      inst_qemu_x64:
+        type: boolean
+        description: 'Install QEMU x86_64'
+        default: true
+      inst_qemu_ppc:
+        type: boolean
+        description: 'Install QEMU PPC (PowerPC)'
+        default: false
+      inst_qemu_arm:
+        type: boolean
+        description: 'Install QEMU ARM'
+        default: false
+      inst_xfce:
+        type: boolean
+        description: 'Install Xubuntu (XFCE) and VNC server, help you to manage VM using Virtual Machine Manager (virt-manager)'
+        default: true
+      inst_vm_man:
+        type: boolean
+        description: 'Install Virtual Machine Manager (virt-manager)'
+        default: true
+        
+jobs:
+  debug-runner:
+    runs-on: ubuntu-26.04
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Connect to Tailnet & Enable SSH
+        uses: tailscale/github-action@v2
+        with:
+          authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
+          args: --ssh
+
+      - name: Create Custom Command
+        run: |
+          sudo cat <<EOF > /usr/local/bin/update
+          sudo apt update
+          EOF
+
+          sudo cat <<EOF > /usr/local/bin/clean
+          sudo apt clean
+          EOF
+
+          sudo cat <<EOF > /usr/local/bin/autoclean
+          sudo apt autoclean
+          EOF
+
+          sudo cat <<EOF > /usr/local/bin/autorm-w-purge
+          sudo apt autoremove --purge
+          EOF
+
+          sudo cat <<EOF > /usr/local/bin/upgrade
+          sudo apt upgrade
+          EOF
+
+          sudo cat <<EOF > /usr/local/bin/full-upgrade
+          sudo apt full-upgrade
+          EOF
+
+          sudo chmod +x /usr/local/bin/*
+
+      - name: Updating APT
+        run: |
+          sudo apt update
+      
+      - name: Install QEMU x86_64
+        if: ${{ inputs.inst_qemu_x64 }}
+        run: |
+          sudo apt install qemu-system-x86
+
+      - name: Skip Install QEMU x86_64
+        if: ${{ !inputs.inst_qemu_x64 }}
+        run: |
+          echo "Skipped."
+
+      - name: Install QEMU PPC
+        if: ${{ inputs.inst_qemu_ppc }}
+        run: |
+          sudo apt install qemu-system-ppc
+
+      - name: Skip Install QEMU PPC
+        if: ${{ !inputs.inst_qemu_ppc }}
+        run: |
+          echo "Skipped."
+
+      - name: Install QEMU ARM
+        if: ${{ inputs.inst_qemu_arm }}
+        run: |
+          sudo apt install qemu-system-aarch64
+
+      - name: Skip Install QEMU ARM
+        if: ${{ !inputs.inst_qemu_arm }}
+        run: |
+          echo "Skipped."
+          
+      - name: Installing QEMU Utility
+        run: |
+          sudo apt install qemu-utils -y
+
+      - name: Install Xubuntu (or XFCE) and VNC server
+        if: ${{ inputs.inst_xfce }}
+        run: |
+          sudo apt install xubuntu-desktop -y
+          sudo apt install tightvncserver -y
+
+      - name: Skip Installing desktop and VNC server
+        if: ${{ !inputs.inst_xfce }}
+        run: |
+          echo "Skipped."
+
+      - name: Install Virtual Machine Manager
+        if: ${{ inputs.inst_vm_man }}
+        run: |
+          sudo apt install virt-manager libvirt-daemon -y
+          sudo systemctl enable --now libvirtd
+
+      - name: Skip Installing Virtual Machine Manager
+        if: ${{ !inputs.inst_vm_man }}
+        run: |
+          echo "Skipped."
+
+      - name: Create /runner-artifact directory
+        run: |
+          sudo mkdir -p /runner-artifact
+          sudo chmod 777 /runner-artifact
+
+      - name: Turning on NBD module
+        run: |
+          sudo modprobe nbd
+
+      - name: Display Connection Info
+        run: |
+          RUNNER_IP=$(tailscale ip -4)
+          echo "Run this in your terminal: ssh runner@$RUNNER_IP"
+          echo "If you are completed on doing something and want to upload the artifact, run: touch /tmp/continue"
+
+      - name: Hold Execution for SSH
+        run: |
+          while [ ! -f /tmp/continue ]; do
+            sleep 5
+          done
+
+      - name: Upload a Build Artifact
+        uses: actions/upload-artifact@7.0.1
+          name: artifact
+          path: /runner-artifact/*
+          include-hidden-files: false
+          archive: true
