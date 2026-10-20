@@ -60,11 +60,17 @@ jobs:
           sudo apt autoclean
           EOF
 
-          sudo cat <<EOF > /usr/local/bin/autorm-w-purge
+          sudo cat <<EOF > /usr/local/bin/autorm
           sudo apt autoremove --purge
           EOF
 
-          sudo chmod +x /usr/local/bin/*
+          sudo chmod +x /usr/local/bin/update
+          sudo chmod +x /usr/local/bin/upgrade
+          sudo chmod +x /usr/local/bin/full-upgrade
+          sudo chmod +x /usr/local/bin/clean
+          sudo chmod +x /usr/local/bin/autoclean
+          sudo chmod +x /usr/local/bin/autorm
+          
 
 
       - name: Updating APT
